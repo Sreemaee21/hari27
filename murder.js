@@ -97,51 +97,52 @@
       [1568, 1976, 2349, 2637].forEach((f, i) => ping(t + i * 0.06, f, 0.05, 0.9, verb));
       burst(t, 0.3, "bandpass", 5000, 2, 0.04);
     }
-    // rusty iron hinge: stick-slip friction rendered sample by sample,
-    // then rung through a few metal resonances
-    function creakBuffer(dur, base, seed) {
+    // rusty iron hinge: a high stick-slip squeal. friction "sticks" and
+    // "slips" in irregular grains; each slip is a sharp click that rings
+    // the metal's high resonances. no low end, so nothing croaks.
+    function creakBuffer(dur, f0, seed) {
       const sr = ctx.sampleRate, len = Math.ceil(sr * dur);
       const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
       let s = seed;
       const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-      let tp = 0.02;
-      while (tp < dur - 0.05) {
-        const u = tp / dur;
-        // groan: slow at first, catches, speeds up, drags to a stop
-        const rate = base * (0.55 + 1.3 * Math.sin(Math.PI * Math.min(1, u * 1.15)) ** 1.4)
-                   * (1 + 0.35 * Math.sin(2 * Math.PI * 2.3 * tp + seed)) * (0.85 + 0.3 * rnd());
-        const amp = Math.sin(Math.PI * u) ** 0.5 * (0.5 + 0.5 * rnd());
-        const f = 520 + 380 * Math.sin(Math.PI * u) + 120 * rnd();
-        const start = Math.floor(tp * sr), plen = Math.floor(sr * 0.012);
-        for (let n = 0; n < plen && start + n < len; n++) {
-          const k = n / sr;
-          d[start + n] += amp * Math.exp(-k * 420) * (Math.sin(2 * Math.PI * f * k) + 0.5 * Math.sin(2 * Math.PI * f * 2.7 * k) + 0.25 * (rnd() * 2 - 1));
+      let drift = 0, gate = 1, gateNext = 0, t = 0.01;
+      while (t < dur - 0.02) {
+        const u = t / dur;
+        drift += (rnd() - 0.5) * 0.04; drift *= 0.97;              // wandering pitch
+        const f = f0 * (0.8 + 0.7 * Math.sin(Math.PI * u) ** 2) * (1 + 0.06 * Math.sin(2 * Math.PI * 4.7 * t)) * (1 + drift);
+        if (t >= gateNext) {                                         // stick / slip grains
+          gate = rnd() < 0.78 ? 0.6 + 0.4 * rnd() : 0.08;
+          gateNext = t + 0.025 + rnd() * 0.06;
         }
-        tp += 1 / rate;
+        const env = Math.min(1, t / 0.08) * Math.sin(Math.PI * u) ** 0.35;
+        const i = Math.floor(t * sr);
+        const a = env * gate * (0.75 + 0.25 * rnd());
+        if (i + 2 < len) { d[i] += a; d[i + 1] -= 0.7 * a; d[i + 2] += 0.25 * a; }
+        t += 1 / f;
       }
       return buf;
     }
-    function creak(t, dur, base, seed, vol) {
-      const src = ctx.createBufferSource(); src.buffer = creakBuffer(dur, base, seed);
+    function creak(t, dur, f0, seed, vol) {
+      const src = ctx.createBufferSource(); src.buffer = creakBuffer(dur, f0, seed);
+      const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 900; hp.Q.value = 0.7;
       const out = ctx.createGain(); out.gain.value = vol;
-      [[780, 6, 1], [1450, 9, 0.7], [2600, 12, 0.35]].forEach(([f, q, g]) => {
+      src.connect(hp);
+      [[1750, 7, 1], [2950, 9, 0.8], [4400, 11, 0.45]].forEach(([f, q, g]) => {
         const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q;
         const gg = ctx.createGain(); gg.gain.value = g;
-        src.connect(bp); bp.connect(gg); gg.connect(out);
+        hp.connect(bp); bp.connect(gg); gg.connect(out);
       });
-      const body = ctx.createBiquadFilter(); body.type = "lowpass"; body.frequency.value = 500;
-      src.connect(body); body.connect(out);
       out.connect(master); out.connect(verb);
       src.start(t);
     }
     function doors(delay = 0) {
       if (!ctx) return;
       const t = ctx.currentTime + delay;
-      creak(t, 1.7, 34, 7, 0.55);           // left hinge
-      creak(t + 0.18, 1.5, 46, 19, 0.4);    // right hinge, a touch higher
-      // iron settling against the wall
-      burst(t + 1.55, 0.12, "lowpass", 300, 1, 0.25);
-      [180, 410, 960].forEach((f, i) => ping(t + 1.55, f, 0.05 / (i + 1), 1.2, verb));
+      creak(t, 1.6, 230, 7, 4.6);           // left hinge
+      creak(t + 0.22, 1.35, 310, 19, 3.4);  // right hinge, higher and shorter
+      // iron gate knocking against its stop
+      burst(t + 1.5, 0.14, "bandpass", 1900, 4, 0.3);
+      [1210, 1874, 2650].forEach((f, i) => ping(t + 1.5, f, 0.05 / (i + 1), 0.7, verb));
     }
     function toll(delay = 0, vol = 0.34) { bell(delay, 110, vol); bell(delay, 220, vol * 0.35); }
     function kill(delay = 0) {
@@ -193,6 +194,33 @@
     }
   })();
 
+  /* ======================= cage SVG (procedural bars) ======================= */
+  (function buildCage() {
+    const bars = $("#bars"), barsHi = $("#barsHi"), ribs = $("#ribs"), arcade = $("#arcade");
+    const xs = [];
+    for (let x = 38; x <= 262; x += 18.6) xs.push(x);
+    xs.forEach((x) => {
+      const l = document.createElementNS(SVGNS, "path");
+      l.setAttribute("d", `M${x.toFixed(1)} 126 V 360`);
+      bars.appendChild(l);
+      const hl = document.createElementNS(SVGNS, "path");
+      hl.setAttribute("d", `M${(x - 0.8).toFixed(1)} 130 V 356`);
+      barsHi.appendChild(hl);
+      // gothic rib from apex down to the top band
+      const r = document.createElementNS(SVGNS, "path");
+      const k = (x - 150) / 112;
+      r.setAttribute("d", `M150 52 C ${(150 + k * 30).toFixed(1)} 62, ${x.toFixed(1)} ${(78 + Math.abs(k) * 6).toFixed(1)}, ${x.toFixed(1)} 122`);
+      ribs.appendChild(r);
+    });
+    // pointed arches between bars near the base
+    for (let i = 0; i < xs.length - 1; i++) {
+      const a = xs[i], b = xs[i + 1], m = (a + b) / 2;
+      const p = document.createElementNS(SVGNS, "path");
+      p.setAttribute("d", `M${a.toFixed(1)} 342 L${a.toFixed(1)} 322 Q ${a.toFixed(1)} 310, ${m.toFixed(1)} 304 Q ${b.toFixed(1)} 310, ${b.toFixed(1)} 322`);
+      arcade.appendChild(p);
+    }
+  })();
+
   /* ======================= clock ticks ======================= */
   (function ticks() {
     const g = $("#ticks");
@@ -223,11 +251,29 @@
     swear.disabled = true;
     const q = reduceMotion ? 0.15 : 1;
 
-    gate.classList.add("is-tolling");           // hands creep to midnight
+    // scene 1: the cage drops over the Storyteller
+    gate.classList.add("is-dropping");
+    Sound.clank(reduceMotion ? 0 : 0.66);
+    if (!reduceMotion) setTimeout(() => Sound.clank(0), 960);
+    await wait(reduceMotion ? 150 : 1180);
+    gate.classList.add("is-locking");
+    await wait(260);
+    gate.classList.add("is-locked");
+    Sound.latch(0);
+    await wait(220);
+    gate.classList.add("is-caged");
+    await wait(1500 * q);
+
+    // scene 2: the clocktower strikes midnight
+    gate.classList.add("scene-2");
+    $(".scene--cage").setAttribute("aria-hidden", "true");
+    $(".scene--tower").removeAttribute("aria-hidden");
+    await wait(1100 * q);
+    gate.classList.add("is-tolling");
     Sound.toll(0); Sound.toll(1.1); Sound.toll(2.2);
     await wait(2250 * q);
 
-    gate.classList.add("is-murdered");          // crack, blood, bats
+    gate.classList.add("is-murdered");
     Sound.kill(0);
     await wait(700 * q);
     gate.classList.add("show-cap1");
@@ -235,6 +281,7 @@
     gate.classList.add("show-cap2");
     await wait(1900 * q);
 
+    // the creaking gate opens onto the town square
     gate.classList.add("is-opening");
     await wait(reduceMotion ? 100 : 600);
     unlock();
