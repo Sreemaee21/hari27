@@ -49,6 +49,11 @@
 
 <!-- ===== the gate ===== -->
 <section class="gate" id="gate" aria-label="Swear to secrecy">
+  <div class="doors" aria-hidden="true">
+    <div class="door door--l"><svg viewBox="0 0 240 800" preserveAspectRatio="xMaxYMid slice"><use href="#doorArt"/></svg></div>
+    <div class="door door--r"><svg viewBox="0 0 240 800" preserveAspectRatio="xMaxYMid slice"><use href="#doorArt"/></svg></div>
+  </div>
+  <div class="gate__content">
   <p class="gate__line">A shadow falls over the terrace&hellip; and the Storyteller knows nothing about it.</p>
 
   <div class="stage" id="stage">
@@ -116,6 +121,7 @@
 
   <button class="btn btn--primary gate__btn" id="swear" type="button">I swear to keep Hari in the dark</button>
   <p class="gate__caption" id="caption" aria-live="polite">The Storyteller has been kept in the dark&hellip;</p>
+  </div>
 </section>
 
 <button class="mute" id="mute" type="button" aria-label="Mute sound" aria-pressed="false">
@@ -130,13 +136,18 @@
     <p class="label hero__in" style="--d:0">You have been summoned</p>
     <h1 class="hero__title hero__in" style="--d:1">Hari's 27<span class="sup">th</span></h1>
     <div class="cross hero__in" style="--d:2" aria-hidden="true"><span></span>&times;<span></span></div>
-    <img class="hero__botmon hero__in" style="--d:3" src="botmon.png" alt="Gargoyle door-knocker emblem" width="414" height="443">
+    <div class="board" aria-hidden="true">
+      <div class="board__disc"></div>
+      <div class="board__seats" id="seats"></div>
+      <img class="board__botmon" src="botmon.png" alt="" width="414" height="443">
+    </div>
     <img class="hero__logo hero__in" style="--d:4" src="botcFont.png" alt="Blood on the Clocktower" width="771" height="125">
     <p class="hero__sub hero__in" style="--d:5">Join us for a night of drinks, ballads &amp; demon hunting</p>
     <a class="scroll-cue hero__in" style="--d:6" href="#details">Scroll to read the summons <span aria-hidden="true">&darr;</span></a>
   </header>
 
   <section class="details reveal" id="details" aria-label="When and where">
+    <p class="label details__label">We gather at the town square</p>
     <svg class="flourish" viewBox="0 0 320 24" aria-hidden="true"><use href="#flourish"/></svg>
     <div class="when">
       <div class="when__side when__side--l"><span>Saturday</span><span>7:00 PM</span></div>
@@ -152,12 +163,8 @@
       <a class="btn btn--ghost" id="directions" target="_blank" rel="noopener"
          href="https://www.google.com/maps/search/?api=1&amp;query=Flamingo%20B%2C%20201%2C%20Doyens%20Township">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c-3.9 0-7 3-7 6.9 0 5.2 7 12.1 7 12.1s7-6.9 7-12.1c0-3.9-3.1-6.9-7-6.9zm0 9.4a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z" fill="currentColor"/></svg>
-        Get Directions
+        Find the Town Square
       </a>
-      <button class="btn btn--ghost" id="calendar" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Add to Calendar
-      </button>
     </div>
   </section>
 
@@ -172,6 +179,7 @@
 
   <section class="draw reveal" aria-label="Draw your token">
     <p class="draw__prompt">Tap to draw your fate for the night&hellip;</p>
+    <p class="draw__note">Just for fun. Your real role comes from the Storyteller on the night.</p>
     <button class="token" id="token" type="button" aria-label="Draw your token">
       <span class="token__inner">
         <span class="token__face token__face--back" aria-hidden="true">
@@ -191,16 +199,27 @@
       </span>
     </button>
     <div class="draw__result" id="result" aria-live="polite">
-      <p class="draw__team" id="team"></p>
+      <p class="draw__team">Your fate</p>
       <p class="draw__ability" id="ability"></p>
     </div>
     <button class="btn btn--primary" id="drawBtn" type="button">Draw Your Token</button>
     <button class="link" id="again" type="button" hidden>Draw again</button>
   </section>
 
+  <section class="curious reveal" aria-label="Curious about the game">
+    <p class="label label--muted">New to the town?</p>
+    <h2 class="curious__title">Curious about the game?</h2>
+    <p class="curious__text">Watch Smosh fumble their way through a game of Blood on the Clocktower.</p>
+    <a class="btn btn--ghost" target="_blank" rel="noopener"
+       href="https://www.youtube.com/results?search_query=Smosh+Plays+Blood+On+The+Clocktower+Board+AF">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+      Watch Smosh play
+    </a>
+    <p class="curious__taunt">Or don't. Walk in knowing nothing, trust no one, and live in the moment a little.</p>
+  </section>
+
   <footer class="roof">
     <p class="roof__line reveal">See you after dark.</p>
-    <p class="roof__small reveal">(He doesn't know. Keep it that way.)</p>
     <div class="roof__art">
       <img src="assets/rooftop.webp" alt="Line drawing of a rooftop terrace strung with fairy lights beneath a clocktower" width="1400" height="969" loading="lazy">
       <div class="roof__glows" id="glows" aria-hidden="true"></div>
@@ -219,6 +238,26 @@
     <path d="M160 3 L 166 12 L 160 21 L 154 12 Z" fill="currentColor"/>
     <circle cx="4" cy="12" r="1.8" fill="currentColor"/><circle cx="316" cy="12" r="1.8" fill="currentColor"/>
   </symbol>
+  <g id="doorArt" fill="none" stroke="#DFB858" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="14" y="14" width="240" height="772" stroke-opacity=".45" stroke-width="2"/>
+    <rect x="26" y="26" width="240" height="748" stroke-opacity=".25" stroke-width="1"/>
+    <path d="M30 330 V 250 C 30 160, 150 108, 240 84" stroke-opacity=".7" stroke-width="3"/>
+    <path d="M48 330 V 262 C 48 182, 156 132, 240 112" stroke-opacity=".35" stroke-width="1.5"/>
+    <path d="M240 140 A 64 64 0 0 0 240 268" stroke-opacity=".65" stroke-width="2.5"/>
+    <path d="M240 162 A 42 42 0 0 0 240 246" stroke-opacity=".4" stroke-width="1.5"/>
+    <path d="M240 204 L 182 190 M240 204 L 180 220 M240 204 L 196 160 M240 204 L 198 250" stroke-opacity=".4" stroke-width="1.5"/>
+    <path d="M30 340 H 240 M30 560 H 240 M30 760 H 240" stroke-opacity=".55" stroke-width="2.5"/>
+    <g stroke-opacity=".6" stroke-width="3">
+      <path d="M58 360 V 740"/><path d="M94 360 V 740"/><path d="M130 360 V 740"/><path d="M166 360 V 740"/><path d="M202 360 V 740"/>
+    </g>
+    <g fill="#DFB858" fill-opacity=".6" stroke="none">
+      <path d="M58 344 l6 16 h-12 z"/><path d="M94 344 l6 16 h-12 z"/><path d="M130 344 l6 16 h-12 z"/><path d="M166 344 l6 16 h-12 z"/><path d="M202 344 l6 16 h-12 z"/>
+    </g>
+    <path d="M40 450 Q 76 420 112 450 Q 148 480 184 450 Q 212 428 236 444" stroke-opacity=".35" stroke-width="1.5"/>
+    <path d="M40 650 Q 76 620 112 650 Q 148 680 184 650 Q 212 628 236 644" stroke-opacity=".35" stroke-width="1.5"/>
+    <circle cx="214" cy="470" r="15" stroke-opacity=".85" stroke-width="3.5"/>
+    <circle cx="214" cy="452" r="4" fill="#DFB858" fill-opacity=".85" stroke="none"/>
+  </g>
   <symbol id="star4" viewBox="0 0 20 20"><path d="M10 0 C 11 7, 13 9, 20 10 C 13 11, 11 13, 10 20 C 9 13, 7 11, 0 10 C 7 9, 9 7, 10 0 Z" fill="currentColor"/></symbol>
 </svg>
 

@@ -96,12 +96,32 @@
       [1568, 1976, 2349, 2637].forEach((f, i) => ping(t + i * 0.06, f, 0.05, 0.9, verb));
       burst(t, 0.3, "bandpass", 5000, 2, 0.04);
     }
+    // heavy doors: low groaning creak + air whoosh
+    function doors(delay = 0) {
+      if (!ctx) return;
+      const t = ctx.currentTime + delay;
+      const o = ctx.createOscillator(); o.type = "sawtooth";
+      o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + 0.5); o.frequency.linearRampToValueAtTime(58, t + 1.2);
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 23;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 9; lfo.connect(lfoG); lfoG.connect(o.frequency);
+      const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 700; bp.Q.value = 3;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+      o.connect(bp); bp.connect(g); g.connect(master); g.connect(verb);
+      o.start(t); lfo.start(t); o.stop(t + 1.4); lfo.stop(t + 1.4);
+      const n = noise(1.6);
+      const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 0.8;
+      f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(1800, t + 1.1);
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.12, t + 0.6); ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      n.connect(f); f.connect(ng); ng.connect(master); n.start(t); n.stop(t + 1.6);
+    }
     function setMuted(m) {
       muted = m;
       localStorage.setItem("hari27-muted", m ? "1" : "0");
       if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ctx.currentTime, 0.05);
     }
-    return { init, clank, latch, chime, shimmer, setMuted, get muted() { return muted; } };
+    return { init, clank, latch, chime, shimmer, doors, setMuted, get muted() { return muted; } };
   })();
 
   /* ======================= stars ======================= */
@@ -185,16 +205,20 @@
     gate.classList.add("is-caged");                                    // caption
     await wait(1300);
 
+    gate.classList.add("is-opening");          // portrait flies past, light at the seam
+    await wait(reduceMotion ? 100 : 600);
     unlock();
   });
 
   function unlock() {
-    gate.classList.add("is-open");
+    gate.classList.add("is-open");              // doors swing, camera pushes through
+    Sound.doors(0);
     document.body.classList.remove("locked");
     document.body.classList.add("unlocked");
     page.removeAttribute("aria-hidden");
     window.scrollTo(0, 0);
-    setTimeout(() => { gate.hidden = true; }, 1150);
+    setTimeout(() => gate.classList.add("is-gone"), reduceMotion ? 300 : 1250);
+    setTimeout(() => { gate.hidden = true; }, reduceMotion ? 700 : 2000);
   }
 
   /* ======================= scroll reveals ======================= */
@@ -205,49 +229,13 @@
   }, { threshold: 0.15, rootMargin: "0px 0px -6% 0px" });
   document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
 
-  /* ======================= calendar (.ics) ======================= */
-  $("#calendar").addEventListener("click", () => {
-    const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-    const ics = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//hari27//summons//EN",
-      "CALSCALE:GREGORIAN",
-      "METHOD:PUBLISH",
-      "BEGIN:VEVENT",
-      "UID:hari27-botc-20261128@summons",
-      "DTSTAMP:" + stamp,
-      "DTSTART:20261128T133000Z",   // 7:00 PM IST
-      "DTEND:20261128T180000Z",     // 11:30 PM IST
-      "SUMMARY:Hari's 27th × Blood on the Clocktower",
-      "LOCATION:Flamingo B\\, 201\\, Doyens Township",
-      "DESCRIPTION:BYOB: Bring Your Own Blood. Dress warm.",
-      "BEGIN:VALARM",
-      "TRIGGER:-PT2H",
-      "ACTION:DISPLAY",
-      "DESCRIPTION:You have been summoned",
-      "END:VALARM",
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ].join("\r\n");
-    const a = document.createElement("a");
-    a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-    a.download = "haris-27th-botc.ics";
-    document.body.appendChild(a); a.click(); a.remove();
-  });
-
   /* ======================= draw your token ======================= */
-  const TEAMS = {
-    Townsfolk: { leaf: "#2f5f8a", ui: "#9cc0ea" },
-    Outsider:  { leaf: "#3d7f95", ui: "#8fd0e0" },
-    Minion:    { leaf: "#8a2424", ui: "#ef9a9a" },
-    Demon:     { leaf: "#6a0c10", ui: "#ff7a7a" },
-  };
+  const LEAVES = ["#2f5f8a", "#3d7f95", "#8a2424", "#5b3a8a", "#7a5a1e"];
   const I = {
     key:    '<circle cx="30" cy="30" r="15"/><circle cx="30" cy="30" r="6"/><path d="M41 41 L84 84 M68 68 L77 59 M76 76 L85 67"/>',
     lyre:   '<path d="M30 16 C 16 46, 28 80, 50 88 C 72 80, 84 46, 70 16"/><path d="M26 28 H74"/><path d="M42 28 V83 M50 28 V88 M58 28 V83"/><circle cx="30" cy="14" r="4" fill="currentColor"/><circle cx="70" cy="14" r="4" fill="currentColor"/>',
     goblet: '<path d="M26 14 H74 C 74 46, 62 58, 50 58 C 38 58, 26 46, 26 14 Z"/><path d="M28 28 H72" opacity=".6"/><path d="M50 58 V82"/><path d="M32 88 Q 50 76 68 88 Z" fill="currentColor"/>',
-    lock:   '<path d="M34 46 V32 a16 16 0 0 1 32 0 V46"/><rect x="24" y="46" width="52" height="42" rx="7" fill="currentColor"/><circle cx="50" cy="63" r="5" fill="#eadcbc" stroke="none"/><path d="M48 65 L46 76 H54 L52 65 Z" fill="#eadcbc" stroke="none"/>',
+    moon:   '<path d="M62 12 A 38 38 0 1 0 88 66 A 30 30 0 1 1 62 12 Z" fill="currentColor"/><path d="M24 22 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3 l7 -3 z" fill="currentColor" stroke="none"/>',
     dagger: '<path d="M50 6 L58 20 L56 64 H44 L42 20 Z"/><path d="M50 12 V60" opacity=".55"/><path d="M28 64 H72"/><path d="M50 64 V86"/><circle cx="50" cy="91" r="4.5" fill="currentColor"/>',
     eye:    '<path d="M10 50 Q 50 12 90 50 Q 50 88 10 50 Z"/><circle cx="50" cy="50" r="13"/><circle cx="50" cy="50" r="5.5" fill="currentColor"/><path d="M50 18 V8 M30 24 L24 15 M70 24 L76 15"/>',
     cake:   '<rect x="22" y="54" width="56" height="32" rx="3"/><path d="M22 68 Q 30 74 36 68 T 50 68 T 64 68 T 78 68"/><path d="M50 54 V36"/><path d="M50 22 Q 57 30 50 35 Q 43 30 50 22 Z" fill="currentColor"/><path d="M60 54 L72 40 L78 54" opacity=".7"/>',
@@ -256,17 +244,31 @@
     bottle: '<path d="M44 8 H56 V28 C 66 34, 68 42, 68 50 V88 H32 V50 C 32 42, 34 34, 44 28 Z"/><rect x="36" y="56" width="28" height="18" rx="2" fill="currentColor"/><path d="M44 14 H56"/><path d="M76 20 q 6 -6 0 -12 M84 26 q 8 -10 0 -20" opacity=".7"/>',
   };
   const ROLES = [
-    { name: "Terrace Conspirator", team: "Minion",    icon: "key",    ability: "You know where the night really ends. Say nothing." },
-    { name: "Secret Balladeer",    team: "Townsfolk", icon: "lyre",   ability: "Once per night, when the moment is right, you lead the chorus." },
-    { name: "Beverage Baron",      team: "Townsfolk", icon: "goblet", ability: "Each night, choose a player: their glass is never empty." },
-    { name: "Keeper of Secrets",   team: "Townsfolk", icon: "lock",   ability: "If the Storyteller learns of the terrace, you die. Don't die." },
-    { name: "Demon Hunter",        team: "Townsfolk", icon: "dagger", ability: "Once per game, publicly accuse anyone. If they're the Demon, take a victory sip." },
-    { name: "Suspicious Townsfolk",team: "Outsider",  icon: "eye",    ability: "You think everyone is lying. You are probably right." },
-    { name: "Cake Thief",          team: "Minion",    icon: "cake",   ability: "Each night, you may take a second slice. The Storyteller will never know." },
-    { name: "Lamplighter",         team: "Townsfolk", icon: "bulb",   ability: "When the lights flicker, you know something is about to happen." },
-    { name: "Birthday Demon",      team: "Demon",     icon: "horns",  ability: "Each night*, the Storyteller ages one year. Nothing can stop you." },
-    { name: "Tipsy Drunk",         team: "Outsider",  icon: "bottle", ability: "You think you are the Storyteller. You are not." },
+    { name: "Terrace Wanderer",    icon: "key",    fate: "You always find the best spot in the house, even the ones nobody told you about." },
+    { name: "Secret Balladeer",    icon: "lyre",   fate: "When the music starts, you will know every word. Every single one." },
+    { name: "Beverage Baron",      icon: "goblet", fate: "You arrive bearing the finest bottle in town. Everyone remembers." },
+    { name: "Midnight Snacker",    icon: "cake",   fate: "You will find the snacks before anyone else knows they exist." },
+    { name: "Gut-Feeling Oracle",  icon: "eye",    fate: "Your first suspicion is always right. You will ignore it anyway." },
+    { name: "Lamplighter",         icon: "bulb",   fate: "When the lights flicker, you are the first to sense something is coming." },
+    { name: "Birthday Ghoul",      icon: "horns",  fate: "You will make Hari feel every one of his 27 years." },
+    { name: "Tipsy Philosopher",   icon: "bottle", fate: "By midnight you will have one theory that explains everything." },
+    { name: "Silver Tongue",       icon: "dagger", fate: "You will lie so beautifully that even you believe it." },
+    { name: "Night Owl",           icon: "moon",   fate: "You leave last, and you leave with the best story." },
   ];
+
+  (function seats() {
+    const box = $("#seats"), n = ROLES.length;
+    ROLES.forEach((r, i) => {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      const s = document.createElement("span");
+      s.className = "seat";
+      s.style.left = (50 + 43 * Math.cos(a)).toFixed(2) + "%";
+      s.style.top = (50 + 43 * Math.sin(a)).toFixed(2) + "%";
+      s.style.setProperty("--dl", (i * 0.6).toFixed(1) + "s");
+      s.innerHTML = `<svg viewBox="0 0 100 100"><g transform="translate(18 18) scale(.64)" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">${I[r.icon]}</g></svg>`;
+      box.appendChild(s);
+    });
+  })();
 
   const token = $("#token"), result = $("#result"), drawBtn = $("#drawBtn"), again = $("#again");
   const tokenSvg = $(".token__svg");
@@ -289,14 +291,11 @@
     last = i; return ROLES[i];
   }
   function paint(role) {
-    const t = TEAMS[role.team];
-    tokenSvg.style.setProperty("--team", t.leaf);
-    result.style.setProperty("--team-ui", t.ui);
+    tokenSvg.style.setProperty("--team", LEAVES[ROLES.indexOf(role) % LEAVES.length]);
     $("#tokenIcon").innerHTML = `<g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${I[role.icon]}</g>`;
     $("#tokenName").textContent = role.name;
-    $("#team").textContent = role.team;
-    $("#ability").textContent = role.ability;
-    token.setAttribute("aria-label", `Your token: the ${role.name}, ${role.team}. ${role.ability}`);
+    $("#ability").textContent = role.fate;
+    token.setAttribute("aria-label", `Your token: the ${role.name}. ${role.fate}`);
   }
   async function draw() {
     if (busy) return;
