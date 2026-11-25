@@ -96,22 +96,13 @@
       [1568, 1976, 2349, 2637].forEach((f, i) => ping(t + i * 0.06, f, 0.05, 0.9, verb));
       burst(t, 0.3, "bandpass", 5000, 2, 0.04);
     }
-    // heavy doors: low groaning creak + air whoosh
+    // doors swinging open: a rush of air, no tonal groan
     function doors(delay = 0) {
       if (!ctx) return;
       const t = ctx.currentTime + delay;
-      const o = ctx.createOscillator(); o.type = "sawtooth";
-      o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + 0.5); o.frequency.linearRampToValueAtTime(58, t + 1.2);
-      const lfo = ctx.createOscillator(); lfo.frequency.value = 23;
-      const lfoG = ctx.createGain(); lfoG.gain.value = 9; lfo.connect(lfoG); lfoG.connect(o.frequency);
-      const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 700; bp.Q.value = 3;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
-      o.connect(bp); bp.connect(g); g.connect(master); g.connect(verb);
-      o.start(t); lfo.start(t); o.stop(t + 1.4); lfo.stop(t + 1.4);
       const n = noise(1.6);
       const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 0.8;
-      f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(1800, t + 1.1);
+      f.frequency.setValueAtTime(480, t); f.frequency.exponentialRampToValueAtTime(2000, t + 1.1);
       const ng = ctx.createGain();
       ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.12, t + 0.6); ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
       n.connect(f); f.connect(ng); ng.connect(master); n.start(t); n.stop(t + 1.6);
