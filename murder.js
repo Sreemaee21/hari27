@@ -281,6 +281,16 @@
       el.classList.add("step"); el.style.setProperty("--i", i);
     });
   });
+  // a small gothic arrow at the foot of every screen but the last
+  const phases = [...document.querySelectorAll(".phase")];
+  phases.forEach((ph, k) => {
+    if (k === 0 || k === phases.length - 1) return;   // summons has its own cue; rooftop is the end
+    const m = document.createElement("button");
+    m.type = "button"; m.className = "more"; m.setAttribute("aria-label", "Next");
+    m.innerHTML = '<svg viewBox="0 0 24 44" aria-hidden="true"><circle cx="12" cy="3" r="1.8" fill="currentColor"/><path d="M12 7 V 31" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M7 13 Q 12 18 17 13" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12 42 L 5.5 28 Q 12 32 18.5 28 Z" fill="currentColor"/></svg>';
+    m.addEventListener("click", () => phases[k + 1].scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" }));
+    ph.appendChild(m);
+  });
   const phaseIO = new IntersectionObserver((entries) => {
     entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); phaseIO.unobserve(e.target); } });
   }, { threshold: 0.4 });
