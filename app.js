@@ -96,52 +96,25 @@
       [1568, 1976, 2349, 2637].forEach((f, i) => ping(t + i * 0.06, f, 0.05, 0.9, verb));
       burst(t, 0.3, "bandpass", 5000, 2, 0.04);
     }
-    // rusty iron hinge: a high stick-slip squeal. friction "sticks" and
-    // "slips" in irregular grains; each slip is a sharp click that rings
-    // the metal's high resonances. no low end, so nothing croaks.
-    function creakBuffer(dur, f0, seed) {
-      const sr = ctx.sampleRate, len = Math.ceil(sr * dur);
-      const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-      let s = seed;
-      const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-      let drift = 0, gate = 1, gateNext = 0, t = 0.01;
-      while (t < dur - 0.02) {
-        const u = t / dur;
-        drift += (rnd() - 0.5) * 0.04; drift *= 0.97;              // wandering pitch
-        const f = f0 * (0.8 + 0.7 * Math.sin(Math.PI * u) ** 2) * (1 + 0.06 * Math.sin(2 * Math.PI * 4.7 * t)) * (1 + drift);
-        if (t >= gateNext) {                                         // stick / slip grains
-          gate = rnd() < 0.78 ? 0.6 + 0.4 * rnd() : 0.08;
-          gateNext = t + 0.025 + rnd() * 0.06;
-        }
-        const env = Math.min(1, t / 0.08) * Math.sin(Math.PI * u) ** 0.35;
-        const i = Math.floor(t * sr);
-        const a = env * gate * (0.75 + 0.25 * rnd());
-        if (i + 2 < len) { d[i] += a; d[i + 1] -= 0.7 * a; d[i + 2] += 0.25 * a; }
-        t += 1 / f;
-      }
-      return buf;
-    }
-    function creak(t, dur, f0, seed, vol) {
-      const src = ctx.createBufferSource(); src.buffer = creakBuffer(dur, f0, seed);
-      const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 900; hp.Q.value = 0.7;
-      const out = ctx.createGain(); out.gain.value = vol;
-      src.connect(hp);
-      [[1750, 7, 1], [2950, 9, 0.8], [4400, 11, 0.45]].forEach(([f, q, g]) => {
-        const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f; bp.Q.value = q;
-        const gg = ctx.createGain(); gg.gain.value = g;
-        hp.connect(bp); bp.connect(gg); gg.connect(out);
-      });
-      out.connect(master); out.connect(verb);
-      src.start(t);
-    }
+    // heavy doors: low groaning creak + air whoosh
     function doors(delay = 0) {
       if (!ctx) return;
       const t = ctx.currentTime + delay;
-      creak(t, 1.6, 230, 7, 4.6);           // left hinge
-      creak(t + 0.22, 1.35, 310, 19, 3.4);  // right hinge, higher and shorter
-      // iron gate knocking against its stop
-      burst(t + 1.5, 0.14, "bandpass", 1900, 4, 0.3);
-      [1210, 1874, 2650].forEach((f, i) => ping(t + 1.5, f, 0.05 / (i + 1), 0.7, verb));
+      const o = ctx.createOscillator(); o.type = "sawtooth";
+      o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + 0.5); o.frequency.linearRampToValueAtTime(58, t + 1.2);
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 23;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 9; lfo.connect(lfoG); lfoG.connect(o.frequency);
+      const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 700; bp.Q.value = 3;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+      o.connect(bp); bp.connect(g); g.connect(master); g.connect(verb);
+      o.start(t); lfo.start(t); o.stop(t + 1.4); lfo.stop(t + 1.4);
+      const n = noise(1.6);
+      const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 0.8;
+      f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(1800, t + 1.1);
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.12, t + 0.6); ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      n.connect(f); f.connect(ng); ng.connect(master); n.start(t); n.stop(t + 1.6);
     }
     function setMuted(m) {
       muted = m;
