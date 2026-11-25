@@ -260,18 +260,18 @@
     await wait(260);
     gate.classList.add("is-locked");
     Sound.latch(0);
+    Sound.chime(0.35);                          // chime as the lock snaps
     await wait(220);
     gate.classList.add("is-caged");
-    await wait(1500 * q);
+    await wait(2600 * q);                       // let the chime finish
 
-    // scene 2: the clocktower strikes midnight
-    gate.classList.add("scene-2");
+    // scene 2: the clocktower, already tolling as it appears
+
+    gate.classList.add("scene-2", "is-tolling");
     $(".scene--cage").setAttribute("aria-hidden", "true");
     $(".scene--tower").removeAttribute("aria-hidden");
-    await wait(1100 * q);
-    gate.classList.add("is-tolling");
     Sound.toll(0); Sound.toll(1.1); Sound.toll(2.2);
-    await wait(2250 * q);
+    await wait(2300 * q);
 
     gate.classList.add("is-murdered");
     Sound.kill(0);
