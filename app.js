@@ -12,10 +12,17 @@
     let muted = localStorage.getItem("hari27-muted") === "1";
 
     function init() {
-      if (ctx) return ctx.resume();
+      // iPhones mute web audio when the side switch is on silent unless the
+      // page asks to be treated like media playback (iOS 17+)
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+      if (ctx) { if (ctx.state !== "running") ctx.resume(); return; }
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       ctx = new AC();
+      if (ctx.state !== "running") ctx.resume();
+      // older iOS only unlocks after something is played inside the tap
+      const blank = ctx.createBufferSource(); blank.buffer = ctx.createBuffer(1, 1, 22050);
+      blank.connect(ctx.destination); blank.start(0);
       master = ctx.createGain();
       master.gain.value = muted ? 0 : 0.9;
       master.connect(ctx.destination);
@@ -112,7 +119,7 @@
       localStorage.setItem("hari27-muted", m ? "1" : "0");
       if (master) master.gain.setTargetAtTime(m ? 0 : 0.9, ctx.currentTime, 0.05);
     }
-    return { init, clank, latch, chime, shimmer, doors, setMuted, get muted() { return muted; } };
+    return { init, clank, latch, chime, shimmer, doors, setMuted, get muted() { return muted; }, get started() { return !!ctx; } };
   })();
 
   /* ======================= stars ======================= */
@@ -174,7 +181,12 @@
     muteBtn.setAttribute("aria-label", Sound.muted ? "Unmute sound" : "Mute sound");
   }
   syncMute();
-  muteBtn.addEventListener("click", () => { Sound.init(); Sound.setMuted(!Sound.muted); syncMute(); });
+  muteBtn.addEventListener("click", () => {
+    Sound.init(); Sound.setMuted(!Sound.muted); syncMute();
+    if (!Sound.muted) Sound.shimmer(0.05);       // a little chime so you know it works
+  });
+  // phones suspend audio when the tab is backgrounded; wake it on return
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Sound.started) Sound.init(); });
 
   swear.addEventListener("click", async () => {
     Sound.init();

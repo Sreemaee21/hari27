@@ -22,8 +22,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="assets/hari.webp">
 <!-- TEST VARIANT: the Storyteller has been murdered -->
-<link rel="stylesheet" href="styles.css?v=8">
-<link rel="stylesheet" href="murder.css?v=8">
+<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="murder.css?v=10">
 </head>
 <body class="locked">
 
@@ -215,7 +215,7 @@
 <!-- ===== the invitation ===== -->
 <main class="page" id="page" aria-hidden="true">
 
-  <header class="hero">
+  <header class="hero phase">
     <p class="label hero__in" style="--d:0">You have been summoned</p>
     <h1 class="hero__title hero__in" style="--d:1">Hari's 27<span class="sup">th</span></h1>
     <div class="cross hero__in" style="--d:2" aria-hidden="true"><span></span>&times;<span></span></div>
@@ -229,7 +229,7 @@
     <a class="scroll-cue hero__in" style="--d:6" href="#details">Scroll to read the summons <span aria-hidden="true">&darr;</span></a>
   </header>
 
-  <section class="details reveal" id="details" aria-label="When and where">
+  <section class="details phase" id="details" aria-label="When and where">
     <p class="label details__label">We gather at the town square to find the Demon</p>
     <svg class="flourish" viewBox="0 0 320 24" aria-hidden="true"><use href="#flourish"/></svg>
     <div class="when">
@@ -251,16 +251,18 @@
     </div>
   </section>
 
-  <section class="grimoire reveal" aria-label="The rules of the night">
+  <div class="phase phase--rules">
+  <section class="grimoire" aria-label="The rules of the night">
     <i class="corner corner--tl"></i><i class="corner corner--tr"></i><i class="corner corner--bl"></i><i class="corner corner--br"></i>
     <p class="label label--muted">The rules of the night</p>
     <h2 class="grimoire__title"><span class="grimoire__byob">BYOB</span><span class="grimoire__sub">Bring Your Own Blood</span></h2>
     <svg class="flourish flourish--small" viewBox="0 0 320 24" aria-hidden="true"><use href="#flourish"/></svg>
     <p class="grimoire__text">Dress warm &mdash; if the night permits, we gather on the terrace.</p>
-    <p class="grimoire__text grimoire__text--secret">Swear to secrecy: Hari's hosting Blood on the Clocktower, but he has no idea about the terrace.</p>
+    <p class="grimoire__text grimoire__text--secret">You have sworn to secrecy: Hari's hosting Blood on the Clocktower, but he has no idea about the terrace.</p>
   </section>
+  </div>
 
-  <section class="draw reveal" aria-label="Draw your token">
+  <section class="draw phase" aria-label="Draw your token">
     <p class="draw__prompt">Tap to draw your fate for the night&hellip;</p>
     <p class="draw__note">Just for fun. Your real role comes from the Storyteller on the night.</p>
     <button class="token" id="token" type="button" aria-label="Draw your token">
@@ -289,7 +291,7 @@
     <button class="link" id="again" type="button" hidden>Draw again</button>
   </section>
 
-  <section class="curious reveal" aria-label="Curious about the game">
+  <section class="curious phase" aria-label="Curious about the game">
     <p class="label label--muted">New to the town?</p>
     <h2 class="curious__title">Curious about the game?</h2>
     <p class="curious__text">Watch Smosh fumble their way through a game of Blood on the Clocktower.</p>
@@ -301,8 +303,8 @@
     <p class="curious__taunt">Or don't. Walk in knowing nothing, trust no one, and live in the moment a little.</p>
   </section>
 
-  <footer class="roof">
-    <p class="roof__line reveal">See you after dark.</p>
+  <footer class="roof phase">
+    <p class="roof__line">See you after dark.</p>
     <div class="roof__art">
       <img src="assets/rooftop.webp" alt="Line drawing of a rooftop terrace strung with fairy lights beneath a clocktower" width="1400" height="969" loading="lazy">
       <div class="roof__glows" id="glows" aria-hidden="true"></div>
@@ -344,6 +346,6 @@
   <symbol id="star4" viewBox="0 0 20 20"><path d="M10 0 C 11 7, 13 9, 20 10 C 13 11, 11 13, 10 20 C 9 13, 7 11, 0 10 C 7 9, 9 7, 10 0 Z" fill="currentColor"/></symbol>
 </svg>
 
-<script src="murder.js?v=8"></script>
+<script src="murder.js?v=10"></script>
 </body>
 </html>
